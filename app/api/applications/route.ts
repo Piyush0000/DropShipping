@@ -3,11 +3,8 @@ const RECIPIENT_EMAIL = "sociodesk.help@gmail.com";
 type Application = {
   name: string;
   phone: string;
-  alternatePhone: string;
-  address: string;
   sellerType: string;
   targetRegion: string;
-  ownsLlc: string;
   budget: string;
   companyWebsite?: string;
 };
@@ -15,12 +12,9 @@ type Application = {
 const fieldLabels: Array<[keyof Application, string]> = [
   ["name", "Applicant name"],
   ["phone", "Phone number"],
-  ["alternatePhone", "Alternate number"],
-  ["address", "Address"],
   ["sellerType", "Seller type"],
   ["targetRegion", "Target region"],
-  ["ownsLlc", "Owns an LLC"],
-  ["budget", "Daily ad budget"],
+  ["budget", "Monthly ad budget"],
 ];
 
 const displayValues: Record<string, string> = {
@@ -33,8 +27,6 @@ const displayValues: Record<string, string> = {
   uae: "United Arab Emirates",
   europe: "Europe",
   other: "Other",
-  yes: "Yes",
-  no: "No",
   "10000": "₹10,000",
   "15000": "₹15,000",
   "30000": "₹30,000",
@@ -68,11 +60,8 @@ function validate(body: Record<string, unknown>): Application | null {
   const application: Application = {
     name: clean(body.name, 100),
     phone: clean(body.phone, 30),
-    alternatePhone: clean(body.alternatePhone, 30),
-    address: clean(body.address, 500),
     sellerType: clean(body.sellerType, 50),
     targetRegion: clean(body.targetRegion, 50),
-    ownsLlc: clean(body.ownsLlc, 10),
     budget: clean(body.budget, 30),
     companyWebsite: clean(body.companyWebsite, 200),
   };
@@ -93,10 +82,8 @@ function validate(body: Record<string, unknown>): Application | null {
   if (
     requiredFields.some((value) => !value) ||
     !phonePattern.test(application.phone) ||
-    !phonePattern.test(application.alternatePhone) ||
     !sellerTypes.has(application.sellerType) ||
     !targetRegions.has(application.targetRegion) ||
-    !["yes", "no"].includes(application.ownsLlc) ||
     !budgets.has(application.budget)
   ) {
     return null;

@@ -152,14 +152,6 @@ export default function Home() {
                 <input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" required />
               </div>
               <div className="field">
-                <label htmlFor="alternate-phone">Alternate No. <i>*</i></label>
-                <input id="alternate-phone" name="alternatePhone" type="tel" placeholder="+91 98765 43211" required />
-              </div>
-              <div className="field full">
-                <label htmlFor="address">Your Address <i>*</i></label>
-                <textarea id="address" name="address" placeholder="Street address, city, state, PIN code..." required />
-              </div>
-              <div className="field">
                 <label htmlFor="seller-type">Seller Type <i>*</i></label>
                 <select id="seller-type" name="sellerType" defaultValue="" required>
                   <option value="" disabled>Select your type</option>
@@ -180,15 +172,8 @@ export default function Home() {
                   <option value="other">Other</option>
                 </select>
               </div>
-              <fieldset className="field radio-field">
-                <legend>Do you own an LLC? <i>*</i></legend>
-                <div className="radio-group">
-                  <label><input type="radio" name="ownsLlc" value="yes" required /><span /> Yes</label>
-                  <label><input type="radio" name="ownsLlc" value="no" required /><span /> No</label>
-                </div>
-              </fieldset>
               <div className="field">
-                <label htmlFor="budget">Daily Ad Budget (INR) <i>*</i></label>
+                <label htmlFor="budget">Monthly Ad Budget (INR) <i>*</i></label>
                 <select id="budget" name="budget" defaultValue="" required>
                   <option value="" disabled>Select your budget</option>
                   <option value="10000">₹10,000</option>
