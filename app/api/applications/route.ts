@@ -1,5 +1,6 @@
-const RECIPIENT_EMAIL = "sociodesk.help@gmail.com";
-const CRM_LEADS_URL = process.env.ADMIN_CRM_LEADS_URL;
+// Applications are stored as leads in the EVOC CRM (admin panel → CRM → DropShipping).
+const CRM_LEADS_URL =
+  process.env.ADMIN_CRM_LEADS_URL || "https://api.evoclabs.com/api/leads";
 
 type Application = {
   name: string;
@@ -20,45 +21,10 @@ const fieldLabels: Array<[keyof Application, string]> = [
   ["serviceFee", "20K Service fee"],
 ];
 
-const displayValues: Record<string, string> = {
-  "ecommerce-seller": "Ecommerce seller",
-  employee: "Employee",
-  student: "Student",
-  india: "India",
-  "united-states": "United States",
-  "united-kingdom": "United Kingdom",
-  uae: "United Arab Emirates",
-  europe: "Europe",
-  other: "Other",
-  "10000": "₹10,000",
-  "15000": "₹15,000",
-  "30000": "₹30,000",
-  "30000-plus": "₹30,000+",
-  yes: "Yes",
-  no: "No",
-};
-
 function clean(value: unknown, maxLength: number) {
   return typeof value === "string"
     ? value.replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, maxLength)
     : "";
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    };
-    return entities[character];
-  });
-}
-
-function displayValue(value: string) {
-  return displayValues[value] || value;
 }
 
 function validate(body: Record<string, unknown>): Application | null {
@@ -101,55 +67,7 @@ function validate(body: Record<string, unknown>): Application | null {
   return application;
 }
 
-function buildEmail(application: Application) {
-  const submittedAt = new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "long",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
-  }).format(new Date());
-
-  const rows = fieldLabels
-    .map(([key, label]) => {
-      const value = escapeHtml(displayValue(application[key] || ""));
-      return `
-        <tr>
-          <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#64748b;font-size:14px;width:38%;vertical-align:top">${label}</td>
-          <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#0f172a;font-size:14px;font-weight:600;white-space:pre-wrap">${value}</td>
-        </tr>`;
-    })
-    .join("");
-
-  const textRows = fieldLabels
-    .map(([key, label]) => `${label}: ${displayValue(application[key] || "")}`)
-    .join("\n");
-
-  return {
-    subject: `flocommerce dropshipping - ${application.name}`,
-    text: `New FLCommerce dropshipping application\n\n${textRows}\n\nSubmitted: ${submittedAt} (IST)`,
-    html: `
-      <!doctype html>
-      <html lang="en">
-        <body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif">
-          <table role="presentation" style="width:100%;max-width:640px;margin:0 auto;border-collapse:collapse;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(15,23,42,.08)">
-            <tr>
-              <td style="padding:28px 24px;background:#0b1628;color:#ffffff">
-                <p style="margin:0 0 8px;color:#6ea3ff;font-size:12px;font-weight:700;letter-spacing:1.5px">NEW APPLICATION</p>
-                <h1 style="margin:0;font-size:24px;line-height:1.3">FLCommerce Dropshipping</h1>
-              </td>
-            </tr>
-            <tr><td style="padding:10px 8px"><table role="presentation" style="width:100%;border-collapse:collapse">${rows}</table></td></tr>
-            <tr>
-              <td style="padding:18px 24px;background:#f8fafc;color:#64748b;font-size:12px">Submitted ${escapeHtml(submittedAt)} (IST)</td>
-            </tr>
-          </table>
-        </body>
-      </html>`,
-  };
-}
-
 async function saveApplicationToCrm(application: Application) {
-  if (!CRM_LEADS_URL) return;
-
   const response = await fetch(CRM_LEADS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -204,50 +122,6 @@ export async function POST(request: Request) {
     console.error("Application CRM save failed:", error);
     return Response.json(
       { error: "We could not save your application. Please try again." },
-      { status: 502 },
-    );
-  }
-
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("Application email failed: RESEND_API_KEY is not configured.");
-    return Response.json(
-      { error: "Email delivery is not configured yet. Please contact us directly." },
-      { status: 503 },
-    );
-  }
-
-  const email = buildEmail(application);
-  let response: Response;
-  try {
-    response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "User-Agent": "flcommerce-website/1.0",
-      },
-      body: JSON.stringify({
-        from: process.env.EMAIL_FROM || "FLCommerce <onboarding@resend.dev>",
-        to: [RECIPIENT_EMAIL],
-        subject: email.subject,
-        html: email.html,
-        text: email.text,
-      }),
-    });
-  } catch (error) {
-    console.error("Application email request failed:", error);
-    return Response.json(
-      { error: "We could not send your application. Please try again or contact us directly." },
-      { status: 502 },
-    );
-  }
-
-  if (!response.ok) {
-    const details = await response.text();
-    console.error("Application email failed:", response.status, details);
-    return Response.json(
-      { error: "We could not send your application. Please try again or contact us directly." },
       { status: 502 },
     );
   }
